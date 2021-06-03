@@ -5,6 +5,14 @@ import zio.duration.Duration
 
 import java.io.IOException
 
+object ZIOTypes_0 {
+  //type Task[+A]     = ???
+  //type UIO[+A]      = ???
+  //type RIO[-R, +A]  = ???
+  //type IO[+E, +A]   = ???
+  type URIO[-R, +A] = ZIO[R, Nothing, A]
+}
+
 object HelloWorld_1 extends App {
 
   import zio.console._
@@ -18,13 +26,13 @@ object HelloWorld_1 extends App {
 object Sequence_2 extends App {
   import zio.console._
 
-  // SYH: zipLeft zipRight *> <* to decide the type of the final effect/IO monad
+  // SYH:  The zipRight and zipLeft functions have symbolic aliases, known as *> and <*, respectively.
   def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
-    (putStrLn("Hello ").zipLeft(putStrLn("World!"))).exitCode
-    //(putStrLn("Hello ") *> (putStrLn("World!"))).exitCode
+    //(putStrLn("Hello ").zipLeft(putStrLn("World!"))).exitCode
+    // (putStrLn("Hello ") <* (putStrLn("World!"))).exitCode
 
-    //putStrLn("Hello ").zipRight(putStrLn("World!")).exitCode
-    //(putStrLn("Hello ") <* (putStrLn("World!"))).exitCode
+    putStrLn("Hello ").zipRight(putStrLn("World!")).exitCode
+    //(putStrLn("Hello ") *> (putStrLn("World!"))).exitCode
   }
 }
 
@@ -50,7 +58,8 @@ object Error_Recovery_3 extends App {
 object ForComprehension_4 extends App {
   import zio.console._
 
-  val readInt = getStrLn.flatMap(string => ZIO(string.toInt)).orDie
+  val readInt:ZIO[Console, Nothing, Int] =
+    getStrLn.flatMap(string => ZIO(string.toInt)).orDie
 
   def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
     for {
@@ -74,7 +83,8 @@ object AlarmApp_5 extends App {
           Duration((input.toDouble * 1000.0).toLong, TimeUnit.MILLISECONDS)
         ).refineToOrDie[NumberFormatException]
 
-    val fallback = putStrLn("You didn't enter a number of seconds!") *> getAlarmDuration
+    val fallback =
+      putStrLn("You didn't enter a number of seconds!") *> getAlarmDuration
 
     for {
       _        <- putStrLn("Please enter the number of seconds to sleep: ")
@@ -153,7 +163,7 @@ object More_Fiber_Usage extends App{
     } yield exit
 
   // If either fiber fails, then the composed fiber will fail.
-  def compose1:ZIO[Any, Nothing, String] =
+  def compose1:ZIO[Any, Nothing, (String, String)] =
     for {
       fiber1 <- IO.succeed("Hi!").fork
       fiber2 <- IO.succeed("Bye!").fork
